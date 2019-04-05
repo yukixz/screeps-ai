@@ -1,5 +1,5 @@
-export const CreepRoleNumber: { [key: string]: number } = {
-    builder: 2,
-    harvester: 4,
-    upgrader: 1,
+export const CreepPerRole: { [key: string]: number } = {
+    builder: 1,
+    harvester: 2,
+    upgrader: 2,
 }
