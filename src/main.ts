@@ -1,14 +1,11 @@
 import _ from 'lodash'
 import { ErrorMapper } from 'utils/ErrorMapper'
-import { CreepPerRole } from 'config'
-import * as RoleBuilder from 'role/builder'
-import * as RoleHarvester from 'role/harvester'
-import * as RoleUpgrader from 'role/upgrader'
+import { CreepRoles } from 'config'
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  console.log(`Current game tick is ${Game.time}`)
+  console.log(`******** Game tick: ${Game.time} ********`)
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
@@ -17,41 +14,51 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  // const creeps: Creep[] = room.find(FIND_MY_CREEPS)
-  // const spwans: StructureSpawn[] = room.find(FIND_MY_SPAWNS)
+  // Constants
+  const room: Room = Object.values(Game.rooms)[0]
+  // const terrian: Terrain = room.getTerrain()
+  const room_level: number = _.get(room, ['controller', 'level'], 0)
+  const creeps: Creep[] = room.find(FIND_MY_CREEPS)
+  const spwans: StructureSpawn[] = room.find(FIND_MY_SPAWNS)
   // const structures: Structure[] = room.find(FIND_MY_STRUCTURES)
 
-  // Automatically spawn creeps to meet requirement
-  const idleSpawns = _.filter(Game.spawns, (spawn) => spawn.spawning == null)
-  const roleCount = _.countBy(Game.creeps, 'memory.role')
-  for (const spawn of idleSpawns) {
-    for (const [role, required] of Object.entries(CreepPerRole)) {
-      if (roleCount[role] == null) roleCount[role] = 0
-      if (roleCount[role] < required) {
-        console.log(`Spawn creep ${role} for ${roleCount[role]} < ${required}`)
-        spawn.spawnCreep([WORK, CARRY, MOVE], `${role}-${Date.now()}`, {
-          memory: {
-            role: role,
-            working: false,
-          }
-        })
-        roleCount[role]++
-        break
-      }
+  // Reassign creep role OR spawn new creep
+  const creep_groups = _.groupBy(creeps, 'memory.role')
+  const creeps_lack: string[] = []
+  const creeps_addi: Creep[] = []
+  for (const [role_name, role] of Object.entries(CreepRoles)) {
+    const amount = role.amount[room_level]
+    const creeps = creep_groups[role_name] || []
+    if (creeps.length < amount) {
+      creeps_lack.push(...Array(amount - creeps.length).fill(role_name))
+    }
+    if (creeps.length > amount) {
+      creeps_addi.push(...creeps.splice(amount))
+    }
+  }
+  const idle_spawns = spwans.filter(spawn => spawn.spawning == null)
+  for (const role_name of creeps_lack) {
+    const creep = creeps_addi.pop()
+    if (creep) {
+      creep.memory.role = role_name
+      continue
+    }
+    const spawn = idle_spawns.pop()
+    if (spawn) {
+      spawn.spawnCreep([WORK, CARRY, MOVE], Date.now().toString(16), {
+        memory: {
+          role: role_name,
+          working: false,
+        }
+      })
+      continue
     }
   }
 
-  // Creeps work
-  for (const [name, creep] of Object.entries(Game.creeps)) {
-    RoleHarvester.run(creep)
-    // if (creep.memory.role == 'builder') {
-    //   RoleBuilder.run(creep)
-    // }
-    // if (creep.memory.role == 'harvester') {
-    //   RoleHarvester.run(creep)
-    // }
-    // if (creep.memory.role == 'upgrader') {
-    //   RoleUpgrader.run(creep)
-    // }
+  // Send work commands to creeps
+  for (const creep of creeps) {
+    const role_name = creep.memory.role
+    const role = CreepRoles[role_name]
+    role.run(creep)
   }
 })

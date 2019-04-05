@@ -1,11 +1,11 @@
 export function run(creep: Creep) {
     if (creep.memory.working && creep.carry.energy == 0) {
         creep.memory.working = false
-        creep.say('harvest')
+        creep.say('💎harvest')
     }
     if (!creep.memory.working && creep.carry.energy == creep.carryCapacity) {
         creep.memory.working = true
-        creep.say('upgrade')
+        creep.say('⚒upgrade')
     }
 
     if (creep.memory.working && creep.room.controller) {
