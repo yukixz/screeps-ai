@@ -1,10 +1,6 @@
 const Harvester: CreepRole = {
   name: 'harvester',
 
-  next: (creep: Creep): boolean => {
-    return creep.carry.energy == creep.carryCapacity
-  },
-
   jobs: (room: Room, terrian: RoomTerrain): CreepTargetObject[] => {
     const resutls: CreepTargetObject[] = []
     const sources = room.find(FIND_SOURCES)
@@ -33,21 +29,27 @@ const Harvester: CreepRole = {
     return resutls
   },
 
-  work: (creep: Creep, target: CreepTargetObject): boolean => {
-    let ret
+  next: (creep: Creep): CreepRoleName[] | void => {
+    if (creep.carry.energy === creep.carryCapacity) {
+      return ['builder', 'repairer', 'transferer', 'upgrader']
+    }
+  },
+
+  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+    let retcode: ScreepsReturnCode | undefined
     if (target instanceof Source) {
-      ret = creep.harvest(target)
+      retcode = creep.harvest(target)
     }
     if (target instanceof StructureContainer) {
-      ret = creep.withdraw(target, RESOURCE_ENERGY)
+      retcode = creep.withdraw(target, RESOURCE_ENERGY)
     }
-    if (ret === ERR_NOT_IN_RANGE) {
-      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
-      return true
+    if (retcode === ERR_NOT_IN_RANGE) {
+      retcode = creep.moveTo(target, { visualizePathStyle: { stroke: '#ffff00' } })
     }
-    if (ret == null)
-      throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
-    return ret === OK
+    if (retcode === ERR_TIRED) {
+      return OK
+    }
+    return retcode
   },
 }
 

@@ -10,9 +10,13 @@ import Transferer from 'role/transferer'
 import Upgrader from 'role/upgrader'
 import ConfigOfLevel from 'config'
 
-const CreepRoles: { [key: string]: CreepRole } = {}
-for (const role of [Idler, Builder, Harvester, Repairer, Transferer, Upgrader]) {
-  CreepRoles[role.name] = role
+const CreepRoles: { [key in CreepRoleName]: CreepRole } = {
+  idler: Idler,
+  builder: Builder,
+  harvester: Harvester,
+  repairer: Repairer,
+  transferer: Transferer,
+  upgrader: Upgrader,
 }
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
@@ -75,11 +79,11 @@ export const loop = ErrorMapper.wrapLoop(() => {
   jobs_avail.sort(([a, ja], [b, jb]) => config.priority[a] - config.priority[b])
   for (const [role_name, job] of jobs_avail) {
     const idx = creeps_avail.findIndex((creep) =>
-      (config.nexts[creep.memory.role] || []).includes(role_name))
+      (CreepRoles[creep.memory.role].next(creep) || []).includes(role_name as CreepRoleName))
     if (idx >= 0) {
       const creep = creeps_avail.splice(idx, 1)[0]
       console.log(`Reassign creep:${creep.name} role:${creep.memory.role} to new role:${role_name} target:${job.id}`)
-      creep.memory.role = role_name
+      creep.memory.role = role_name as CreepRoleName
       creep.memory.target = job.id
     }
   }
@@ -111,17 +115,15 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const role_name = creep.memory.role
     const role = CreepRoles[role_name]
     const target = Game.getObjectById(creep.memory.target) as CreepTargetObject
-    let failed = false
     try {
-      failed = !role.work(creep, target)
+      creep.memory.retcode = role.work(creep, target)
+      if (creep.memory.retcode === null)
+        throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
     }
     catch (err) {
-      failed = true
-      console.log(`Work error creep:${creep.id}`)
-      console.log(err)
-    }
-    if (failed) {
       creep.memory.role = 'idler'
+      console.log(`Work error creep:${creep.id} role:${creep.memory.role}`)
+      console.log(err)
     }
   }
 })

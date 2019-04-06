@@ -1,10 +1,9 @@
-
 interface CreepMemory {
   type: string
-  role: string
+  role: CreepRoleName
   target?: string
+  retcode?: ScreepsReturnCode | void
 }
-
 
 interface CreepType {
   name: string
@@ -13,12 +12,11 @@ interface CreepType {
 type CreepTypeName =
   | 'general'
 
-
 interface CreepRole {
-  name: string
-  next: (creep: Creep) => boolean
+  name: CreepRoleName
   jobs: (room: Room, terrian: RoomTerrain) => CreepTargetObject[]
-  work: (creep: Creep, target: CreepTargetObject) => boolean
+  next: (creep: Creep) => CreepRoleName[] | void
+  work: (creep: Creep, target: CreepTargetObject) => ScreepsReturnCode | void
 }
 type CreepRoleName =
   | 'idler'
