@@ -9,12 +9,18 @@ const Upgrader: CreepRole = {
     return room.controller ? Array(2).fill(room.controller) : []
   },
 
-  work: (creep: Creep, target: CreepTargetObject): void => {
-    if (!(target instanceof StructureController))
-      throw new TypeError(`Argument 'target' must be StructureController`)
-    if (creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
+  work: (creep: Creep, target: CreepTargetObject): boolean => {
+    let ret
+    if (target instanceof StructureController) {
+      ret = creep.upgradeController(target)
     }
+    if (ret === ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
+      return true
+    }
+    if (ret == null)
+      throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
+    return ret === OK
   },
 }
 

@@ -33,21 +33,21 @@ const Harvester: CreepRole = {
     return resutls
   },
 
-  work: (creep: Creep, target: CreepTargetObject): void => {
-    if (false) { }
-    else if (target instanceof Source) {
-      if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
-      }
+  work: (creep: Creep, target: CreepTargetObject): boolean => {
+    let ret
+    if (target instanceof Source) {
+      ret = creep.harvest(target)
     }
-    else if (target instanceof StructureContainer) {
-      if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
-      }
+    if (target instanceof StructureContainer) {
+      ret = creep.withdraw(target, RESOURCE_ENERGY)
     }
-    else {
+    if (ret === ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
+      return true
+    }
+    if (ret == null)
       throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
-    }
+    return ret === OK
   },
 }
 

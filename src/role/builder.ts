@@ -11,16 +11,18 @@ const Builder: CreepRole = {
     ]
   },
 
-  work: (creep: Creep, target: CreepTargetObject): void => {
-    if (false) { }
-    else if (target instanceof ConstructionSite) {
-      if (creep.build(target) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
-      }
+  work: (creep: Creep, target: CreepTargetObject): boolean => {
+    let ret
+    if (target instanceof ConstructionSite) {
+      ret = creep.build(target)
     }
-    else {
+    if (ret === ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
+      return true
+    }
+    if (ret == null)
       throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
-    }
+    return ret === OK
   },
 }
 

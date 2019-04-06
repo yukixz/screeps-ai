@@ -16,12 +16,18 @@ const Transferer: CreepRole = {
     })
   },
 
-  work: (creep: Creep, target: CreepTargetObject): void => {
-    if (!(target instanceof Structure))
-      throw new TypeError(`Argument 'target' must be Structure`)
-    if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
+  work: (creep: Creep, target: CreepTargetObject): boolean => {
+    let ret
+    if (target instanceof Structure) {
+      ret = creep.transfer(target, RESOURCE_ENERGY)
     }
+    if (ret === ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
+      return true
+    }
+    if (ret == null)
+      throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
+    return ret === OK
   },
 }
 

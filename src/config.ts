@@ -1,8 +1,8 @@
 const nexts = {
-  idler: ['harvester', 'builder', 'rapairer', 'transferer', 'upgrader'],
+  idler: ['harvester'],
   builder: ['harvester'],
-  harvester: ['builder', 'rapairer', 'transferer', 'upgrader'],
-  rapairer: ['harvester'],
+  harvester: ['builder', 'repairer', 'transferer', 'upgrader'],
+  repairer: ['harvester'],
   transferer: ['harvester'],
   upgrader: ['harvester'],
 }
@@ -11,9 +11,9 @@ const priority = {
   idler: 9,
   builder: 3,
   harvester: 9,
-  rapairer: 2,
+  repairer: 2,
   transferer: 1,
-  upgrader: 2,
+  upgrader: 3,
 }
 
 const ConfigOfLevel: {

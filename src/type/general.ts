@@ -1,13 +1,6 @@
 const GeneralType: CreepType = {
   name: 'general',
 
-  allowed_roles: [
-    'builder',
-    'harvester',
-    'transferer',
-    'upgrader',
-  ],
-
   body: (cost: number): BodyPartConstant[] => {
     let body: BodyPartConstant[] = []
     let body_cost: number = 0

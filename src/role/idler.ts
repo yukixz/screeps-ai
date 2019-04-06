@@ -9,8 +9,8 @@ const Idler: CreepRole = {
     return []
   },
 
-  work: (creep: Creep, target: CreepTargetObject): void => {
-    return
+  work: (creep: Creep, target: CreepTargetObject): boolean => {
+    return false
   },
 }
 

@@ -5,13 +5,13 @@ import GeneralType from 'type/general'
 import Idler from 'role/idler'
 import Builder from 'role/builder'
 import Harvester from 'role/harvester'
-import Rapairer from 'role/repairer'
+import Repairer from 'role/repairer'
 import Transferer from 'role/transferer'
 import Upgrader from 'role/upgrader'
 import ConfigOfLevel from 'config'
 
 const CreepRoles: { [key: string]: CreepRole } = {}
-for (const role of [Idler, Builder, Harvester, Rapairer, Transferer, Upgrader]) {
+for (const role of [Idler, Builder, Harvester, Repairer, Transferer, Upgrader]) {
   CreepRoles[role.name] = role
 }
 
@@ -40,7 +40,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   for (const [role_name, role] of Object.entries(CreepRoles)) {
     jobs_by_role[role_name] = role.jobs(room, terrian)
   }
-  console.log('Jobs', Object.entries(jobs_by_role).map(([n, j]) => `${n}:${j.length}`))
+  // console.log('Jobs', Object.entries(jobs_by_role).map(([n, j]) => `${n}:${j.length}`))
 
   // Scan all creeps' roles
   const creeps_by_role: { [key: string]: Creep[] } = {}
@@ -57,7 +57,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  // Scan lacks of creeps' roles
+  // Scan jobs without creep working
   const jobs_avail: [string, CreepTargetObject][] = []
   for (const [role_name, role_jobs] of Object.entries(jobs_by_role)) {
     const role_creeps = (creeps_by_role[role_name] || []).slice()
@@ -71,6 +71,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   // Reassign creeps' roles
+  creeps_avail.sort((a, b) => a.body.length - b.body.length)
   jobs_avail.sort(([a, ja], [b, jb]) => config.priority[a] - config.priority[b])
   for (const [role_name, job] of jobs_avail) {
     const idx = creeps_avail.findIndex((creep) =>
@@ -93,7 +94,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
         break
       const type = GeneralType
       const name = Date.now().toString(16)
-      const cost = 250  //room.energyCapacityAvailable
+      const cost = room.energyCapacityAvailable
       if (spawn.spawnCreep(type.body(cost), name, {
         memory: {
           type: type.name,
@@ -110,13 +111,17 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const role_name = creep.memory.role
     const role = CreepRoles[role_name]
     const target = Game.getObjectById(creep.memory.target) as CreepTargetObject
+    let failed = false
     try {
-      role.work(creep, target)
+      failed = !role.work(creep, target)
     }
     catch (err) {
+      failed = true
+      console.log(`Work error creep:${creep.id}`)
+      console.log(err)
+    }
+    if (failed) {
       creep.memory.role = 'idler'
-      creep.memory.target = undefined
-      console.error(err)
     }
   }
 })
