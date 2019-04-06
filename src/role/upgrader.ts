@@ -1,22 +1,19 @@
-export function run(creep: Creep) {
-    if (creep.memory.working && creep.carry.energy == 0) {
-        creep.memory.working = false
-        creep.say('💎harvest')
-    }
-    if (!creep.memory.working && creep.carry.energy == creep.carryCapacity) {
-        creep.memory.working = true
-        creep.say('⚒upgrade')
-    }
+const Upgrader: CreepRole = {
+  name: 'upgrader',
 
-    if (creep.memory.working && creep.room.controller) {
-        if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(creep.room.controller, { visualizePathStyle: { stroke: '#ffffff' } })
-        }
+  reassign: (creep: Creep): string[] | void => {
+    if (creep.carry.energy == 0) {
+      return ['harvester']
     }
-    else {
-        var sources = creep.room.find(FIND_SOURCES)
-        if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(sources[0], { visualizePathStyle: { stroke: '#ffaa00' } })
-        }
+  },
+
+  work: (creep: Creep): void => {
+    if (creep.room.controller == null)
+      return
+    if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(creep.room.controller, { visualizePathStyle: { stroke: '#ffffff' } })
     }
+  },
 }
+
+export default Upgrader

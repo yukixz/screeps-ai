@@ -1,31 +1,57 @@
-import * as RoleBuilder from 'role/builder'
-import * as RoleHarvester from 'role/harvester'
-import * as RoleUpgrader from 'role/upgrader'
-
-export const CreepRoles: {
-    [key: string]: {
-        body: BodyPartConstant[],
-        amount: number[],
-        priority: number,
-        run: Function,
-    }
+export const CreepsOfLevel: {
+  [key: number]: {
+    amount: number,
+    roles: {
+      harvester: number,
+      builder: number,
+      transferer: number,
+      upgrader: number,
+    },
+  }
 } = {
-    harvester: {
-        run: RoleHarvester.run,
-        body: [WORK, CARRY, MOVE],
-        amount: [0, 1, 1, 1, 1, 1, 1, 1, 1],
-        priority: 0,
+  0: {
+    amount: 0,
+    roles: {
+      harvester: 0,
+      builder: 0,
+      transferer: 0,
+      upgrader: 0,
     },
-    builder: {
-        run: RoleBuilder.run,
-        body: [WORK, CARRY, MOVE],
-        amount: [0, 0, 1, 1, 1, 1, 1, 1, 1],
-        priority: 2,
+  },
+  1: {
+    amount: 4,
+    roles: {
+      harvester: 3,
+      builder: 0,
+      transferer: 1,
+      upgrader: 2,
     },
-    upgrader: {
-        run: RoleUpgrader.run,
-        body: [WORK, CARRY, MOVE],
-        amount: [0, 2, 2, 2, 2, 2, 2, 2, 2],
-        priority: 1,
+  },
+  2: {
+    amount: 6,
+    roles: {
+      harvester: 3,
+      builder: 1,
+      transferer: 1,
+      upgrader: 2,
     },
+  },
+  3: {
+    amount: 6,
+    roles: {
+      harvester: 3,
+      builder: 1,
+      transferer: 1,
+      upgrader: 2,
+    },
+  },
+  4: {
+    amount: 6,
+    roles: {
+      harvester: 3,
+      builder: 1,
+      transferer: 1,
+      upgrader: 2,
+    },
+  },
 }
