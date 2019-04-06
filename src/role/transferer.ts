@@ -1,14 +1,12 @@
 const Transferer: CreepRole = {
   name: 'transferer',
 
-  reassign: (creep: Creep): string[] | void => {
-    if (creep.carry.energy == 0) {
-      return ['harvester']
-    }
+  next: (creep: Creep): boolean => {
+    return creep.carry.energy == 0
   },
 
-  work: (creep: Creep): void => {
-    const targets = creep.room.find(FIND_STRUCTURES, {
+  jobs: (room: Room, terrian: RoomTerrain): Structure[] => {
+    return room.find(FIND_STRUCTURES, {
       filter: (structure) =>
         (
           structure.structureType == STRUCTURE_EXTENSION ||
@@ -16,10 +14,13 @@ const Transferer: CreepRole = {
         ) &&
         structure.energy < structure.energyCapacity
     })
-    if (targets.length > 0) {
-      if (creep.transfer(targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(targets[0], { visualizePathStyle: { stroke: '#ffffff' } })
-      }
+  },
+
+  work: (creep: Creep, target: CreepTargetObject): void => {
+    if (!(target instanceof Structure))
+      throw new TypeError(`Argument 'target' must be Structure`)
+    if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
     }
   },
 }

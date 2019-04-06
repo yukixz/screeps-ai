@@ -1,17 +1,19 @@
 const Upgrader: CreepRole = {
   name: 'upgrader',
 
-  reassign: (creep: Creep): string[] | void => {
-    if (creep.carry.energy == 0) {
-      return ['harvester']
-    }
+  next: (creep: Creep): boolean => {
+    return creep.carry.energy == 0
   },
 
-  work: (creep: Creep): void => {
-    if (creep.room.controller == null)
-      return
-    if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(creep.room.controller, { visualizePathStyle: { stroke: '#ffffff' } })
+  jobs: (room: Room, terrian: RoomTerrain): StructureController[] => {
+    return room.controller ? Array(3).fill(room.controller) : []
+  },
+
+  work: (creep: Creep, target: CreepTargetObject): void => {
+    if (!(target instanceof StructureController))
+      throw new TypeError(`Argument 'target' must be StructureController`)
+    if (creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
     }
   },
 }

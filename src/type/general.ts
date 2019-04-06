@@ -4,6 +4,7 @@ const GeneralType: CreepType = {
   allowed_roles: [
     'builder',
     'harvester',
+    'transferer',
     'upgrader',
   ],
 

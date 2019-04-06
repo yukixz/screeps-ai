@@ -1,16 +1,37 @@
 const Harvester: CreepRole = {
   name: 'harvester',
 
-  reassign: (creep: Creep): string[] | void => {
-    if (creep.carry.energy == creep.carryCapacity) {
-      return ['builder', 'transferer', 'upgrader']
-    }
+  next: (creep: Creep): boolean => {
+    return creep.carry.energy == creep.carryCapacity
   },
 
-  work: (creep: Creep): void => {
-    const sources = creep.room.find(FIND_SOURCES)
-    if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(sources[0], { visualizePathStyle: { stroke: '#ffaa00' } })
+  jobs: (room: Room, terrian: RoomTerrain): Source[] => {
+    const resutls: Source[] = []
+    const sources = room.find(FIND_SOURCES)
+    for (const source of sources) {
+      const { x, y } = source.pos
+      for (const [dx, dy] of [
+        [-1, -1],
+        [-1, -0],
+        [-1, +1],
+        [-0, -1],
+        [-0, +1],
+        [+1, -1],
+        [+1, -0],
+        [+1, +1],
+      ]) {
+        if (terrian.get(x + dx, y + dy) === 0)
+          resutls.push(source)
+      }
+    }
+    return resutls
+  },
+
+  work: (creep: Creep, target: CreepTargetObject): void => {
+    if (!(target instanceof Source))
+      throw new TypeError(`Argument 'target' must be Source`)
+    if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
     }
   },
 }

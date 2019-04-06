@@ -1,57 +1,26 @@
-export const CreepsOfLevel: {
+const nexts = {
+  idler: ['harvester', 'builder', 'transferer', 'upgrader'],
+  builder: ['harvester'],
+  harvester: ['builder', 'transferer', 'upgrader'],
+  transferer: ['harvester'],
+  upgrader: ['harvester'],
+}
+
+const ConfigOfLevel: {
   [key: number]: {
-    amount: number,
-    roles: {
-      harvester: number,
-      builder: number,
-      transferer: number,
-      upgrader: number,
-    },
+    creeps: number,
+    nexts: { [key: string]: string[] }
   }
 } = {
-  0: {
-    amount: 0,
-    roles: {
-      harvester: 0,
-      builder: 0,
-      transferer: 0,
-      upgrader: 0,
-    },
-  },
-  1: {
-    amount: 4,
-    roles: {
-      harvester: 3,
-      builder: 0,
-      transferer: 1,
-      upgrader: 2,
-    },
-  },
-  2: {
-    amount: 6,
-    roles: {
-      harvester: 3,
-      builder: 1,
-      transferer: 1,
-      upgrader: 2,
-    },
-  },
-  3: {
-    amount: 6,
-    roles: {
-      harvester: 3,
-      builder: 1,
-      transferer: 1,
-      upgrader: 2,
-    },
-  },
-  4: {
-    amount: 6,
-    roles: {
-      harvester: 3,
-      builder: 1,
-      transferer: 1,
-      upgrader: 2,
-    },
-  },
+  0: { creeps: 0, nexts },
+  1: { creeps: 4, nexts },
+  2: { creeps: 6, nexts },
+  3: { creeps: 6, nexts },
+  4: { creeps: 6, nexts },
+  5: { creeps: 6, nexts },
+  6: { creeps: 6, nexts },
+  7: { creeps: 6, nexts },
+  8: { creeps: 6, nexts },
 }
+
+export default ConfigOfLevel

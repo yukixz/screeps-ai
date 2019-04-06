@@ -1,18 +1,19 @@
 const Builder: CreepRole = {
   name: 'builder',
 
-  reassign: (creep: Creep): string[] | void => {
-    if (creep.carry.energy == 0) {
-      return ['harvester']
-    }
+  next: (creep: Creep): boolean => {
+    return creep.carry.energy == 0
   },
 
-  work: (creep: Creep): void => {
-    const targets = creep.room.find(FIND_CONSTRUCTION_SITES)
-    if (targets.length > 0) {
-      if (creep.build(targets[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(targets[0], { visualizePathStyle: { stroke: '#ffffff' } })
-      }
+  jobs: (room: Room, terrian: RoomTerrain): ConstructionSite[] => {
+    return room.find(FIND_CONSTRUCTION_SITES)
+  },
+
+  work: (creep: Creep, target: CreepTargetObject): void => {
+    if (!(target instanceof ConstructionSite))
+      throw new TypeError(`Argument 'target' must be ConstructionSite`)
+    if (creep.build(target) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } })
     }
   },
 }
