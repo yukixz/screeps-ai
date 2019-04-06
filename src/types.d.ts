@@ -22,5 +22,6 @@ interface CreepRole {
 }
 type CreepTargetObject =
   | ConstructionSite
+  | Resource
   | Source
   | Structure

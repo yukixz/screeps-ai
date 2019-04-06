@@ -2,21 +2,23 @@ import _ from 'lodash'
 import { ErrorMapper } from 'utils/ErrorMapper'
 
 import GeneralType from 'type/general'
+import Idler from 'role/idler'
 import Builder from 'role/builder'
 import Harvester from 'role/harvester'
+import Rapairer from 'role/repairer'
 import Transferer from 'role/transferer'
 import Upgrader from 'role/upgrader'
 import ConfigOfLevel from 'config'
 
 const CreepRoles: { [key: string]: CreepRole } = {}
-for (const role of [Builder, Harvester, Transferer, Upgrader]) {
+for (const role of [Idler, Builder, Harvester, Rapairer, Transferer, Upgrader]) {
   CreepRoles[role.name] = role
 }
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  console.log(`******** Game tick: ${Game.time} ********`)
+  console.log(`******** tick:${Game.time} bucket:${Game.cpu.bucket} ********`)
 
   // Automatically delete memory
   for (const name in Memory.creeps) {
@@ -38,10 +40,11 @@ export const loop = ErrorMapper.wrapLoop(() => {
   for (const [role_name, role] of Object.entries(CreepRoles)) {
     jobs_by_role[role_name] = role.jobs(room, terrian)
   }
+  console.log('Jobs', Object.entries(jobs_by_role).map(([n, j]) => `${n}:${j.length}`))
 
   // Scan all creeps' roles
-  const creeps_avail: Creep[] = []
   const creeps_by_role: { [key: string]: Creep[] } = {}
+  const creeps_avail: Creep[] = []
   for (const creep of creeps) {
     const role = CreepRoles[creep.memory.role]
     if (role.next(creep)) {
@@ -55,26 +58,21 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   // Scan lacks of creeps' roles
-  const creeps_lacks: [string, CreepTargetObject][] = []
+  const jobs_avail: [string, CreepTargetObject][] = []
   for (const [role_name, role_jobs] of Object.entries(jobs_by_role)) {
     const role_creeps = (creeps_by_role[role_name] || []).slice()
     for (const job of role_jobs) {
-      const i = role_creeps.findIndex(creep => creep.memory.target === job.id)
-      if (i >= 0) {
-        role_creeps.splice(i, 1)
-      }
-      else {
-        creeps_lacks.push([role_name, job])
-      }
-    }
-    for (const creep of role_creeps) {
-      creep.memory.role = 'idler'
-      creeps_avail.push(creep)
+      const idx = role_creeps.findIndex(creep => creep.memory.target === job.id)
+      if (idx >= 0)
+        role_creeps.splice(idx, 1)
+      else
+        jobs_avail.push([role_name, job])
     }
   }
 
   // Reassign creeps' roles
-  for (const [role_name, job] of creeps_lacks) {
+  jobs_avail.sort(([a, ja], [b, jb]) => config.priority[a] - config.priority[b])
+  for (const [role_name, job] of jobs_avail) {
     const idx = creeps_avail.findIndex((creep) =>
       (config.nexts[creep.memory.role] || []).includes(role_name))
     if (idx >= 0) {
@@ -95,14 +93,15 @@ export const loop = ErrorMapper.wrapLoop(() => {
         break
       const type = GeneralType
       const name = Date.now().toString(16)
-      const cost = room.energyCapacityAvailable
-      console.log(`Spawn new creep:${name} with spawn:${spawn.name} cost:${cost} type:${type.name} role:${role_name}`)
-      spawn.spawnCreep(type.body(cost), name, {
+      const cost = 250  //room.energyCapacityAvailable
+      if (spawn.spawnCreep(type.body(cost), name, {
         memory: {
           type: type.name,
           role: role_name,
         }
-      })
+      }) === OK) {
+        console.log(`Spawn new creep:${name} with spawn:${spawn.name} cost:${cost} type:${type.name} role:${role_name}`)
+      }
     }
   }
 
@@ -111,6 +110,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const role_name = creep.memory.role
     const role = CreepRoles[role_name]
     const target = Game.getObjectById(creep.memory.target) as CreepTargetObject
-    role.work(creep, target)
+    try {
+      role.work(creep, target)
+    }
+    catch (err) {
+      creep.memory.role = 'idler'
+      creep.memory.target = undefined
+      console.error(err)
+    }
   }
 })

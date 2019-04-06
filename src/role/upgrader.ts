@@ -6,7 +6,7 @@ const Upgrader: CreepRole = {
   },
 
   jobs: (room: Room, terrian: RoomTerrain): StructureController[] => {
-    return room.controller ? Array(3).fill(room.controller) : []
+    return room.controller ? Array(2).fill(room.controller) : []
   },
 
   work: (creep: Creep, target: CreepTargetObject): void => {
