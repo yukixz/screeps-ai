@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { ErrorMapper } from 'utils/ErrorMapper'
 
+import { CreepJob } from 'utils/creep'
 import GeneralType from 'type/general'
 import Idler from 'role/idler'
 import Builder from 'role/builder'
@@ -9,12 +10,14 @@ import Repairer from 'role/repairer'
 import Transferer from 'role/transferer'
 import Upgrader from 'role/upgrader'
 import ConfigOfLevel from 'config'
+import StaticHarvester from 'role/staticharvester';
 
 const CreepRoles: { [key in CreepRoleName]: CreepRole } = {
   idler: Idler,
   builder: Builder,
   harvester: Harvester,
   repairer: Repairer,
+  staticharvester: StaticHarvester,
   transferer: Transferer,
   upgrader: Upgrader,
 }
@@ -40,7 +43,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   const config = ConfigOfLevel[room_level]
 
   // Search room for available jobs
-  const jobs_by_role: { [key: string]: CreepTargetObject[] } = {}
+  const jobs_by_role: { [key: string]: CreepJob[] } = {}
   for (const [role_name, role] of Object.entries(CreepRoles)) {
     jobs_by_role[role_name] = role.jobs(room, terrian)
   }
@@ -48,11 +51,12 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   // Scan all creeps' roles
   const creeps_by_role: { [key: string]: Creep[] } = {}
-  const creeps_avail: Creep[] = []
+  const creeps_avail: [CreepRoleName[], Creep][] = []
   for (const creep of creeps) {
     const role = CreepRoles[creep.memory.role]
-    if (role.next(creep)) {
-      creeps_avail.push(creep)
+    const new_roles = role.next(creep)
+    if (new_roles) {
+      creeps_avail.push([new_roles, creep])
     }
     else {
       if (creeps_by_role[role.name] == null)
@@ -62,29 +66,40 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   // Scan jobs without creep working
-  const jobs_avail: [string, CreepTargetObject][] = []
+  const jobs_avail: [CreepRoleName, CreepJob][] = []
   for (const [role_name, role_jobs] of Object.entries(jobs_by_role)) {
     const role_creeps = (creeps_by_role[role_name] || []).slice()
     for (const job of role_jobs) {
-      const idx = role_creeps.findIndex(creep => creep.memory.target === job.id)
+      const idx = role_creeps.findIndex(creep =>
+        creep.memory.job != null && creep.memory.job.id === job.id)
       if (idx >= 0)
         role_creeps.splice(idx, 1)
       else
-        jobs_avail.push([role_name, job])
+        jobs_avail.push([role_name as CreepRoleName, job])
     }
   }
 
-  // Reassign creeps' roles
-  creeps_avail.sort((a, b) => a.body.length - b.body.length)
+  // Assign creeps' roles
+  creeps_avail.sort(([ra, a], [rb, b]) => a.body.length - b.body.length)
   jobs_avail.sort(([a, ja], [b, jb]) => config.priority[a] - config.priority[b])
   for (const [role_name, job] of jobs_avail) {
-    const idx = creeps_avail.findIndex((creep) =>
-      (CreepRoles[creep.memory.role].next(creep) || []).includes(role_name as CreepRoleName))
+    const idx = creeps_avail.findIndex(([new_roles, creep]) =>
+      (new_roles.includes(role_name as CreepRoleName)))
     if (idx >= 0) {
-      const creep = creeps_avail.splice(idx, 1)[0]
-      console.log(`Reassign creep:${creep.name} role:${creep.memory.role} to new role:${role_name} target:${job.id}`)
+      const [new_roles, creep] = creeps_avail.splice(idx, 1)[0]
+      console.log(`Assign creep:${creep.name} role:${creep.memory.role} to role:${role_name} target:${job.id}`)
       creep.memory.role = role_name as CreepRoleName
-      creep.memory.target = job.id
+      creep.memory.job = {
+        id: job.id,
+        target: job.target.id,
+        position: job.position,
+      }
+    }
+  }
+  for (const [new_roles, creep] of creeps_avail) {
+    if (creep.memory.role !== 'idler') {
+      console.log(`Idle creep:${creep.name} role:${creep.memory.role} to role:idler`)
+      creep.memory.role = 'idler'
     }
   }
 
@@ -112,17 +127,21 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   // Send work commands to creeps
   for (const creep of creeps) {
-    const role_name = creep.memory.role
-    const role = CreepRoles[role_name]
-    const target = Game.getObjectById(creep.memory.target) as CreepTargetObject
     try {
-      creep.memory.retcode = role.work(creep, target)
-      if (creep.memory.retcode === null)
-        throw new TypeError(`Argument 'target' must NOT be ${target.constructor.name}`)
+      if (creep.memory.job != null) {
+        const role = CreepRoles[creep.memory.role]
+        const job = new CreepJob(creep.memory.job.target, creep.memory.job.position)
+        creep.memory.retcode = role.work(creep, job)
+        if (creep.memory.retcode === null)
+          throw new TypeError(`Creep:${creep.name} didn't work with job target:${creep.memory.job.target}`)
+      }
+      if (creep.memory.job == null && creep.memory.role !== 'idler') {
+        throw new Error(`Creep:${creep.name} have NO job. Reset to idler`)
+      }
     }
     catch (err) {
       creep.memory.role = 'idler'
-      console.log(`Work error creep:${creep.id} role:${creep.memory.role}`)
+      console.log(`Error: creep:${creep.id} role:${creep.memory.role}`)
       console.log(err)
     }
   }

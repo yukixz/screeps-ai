@@ -1,16 +1,19 @@
-const priority = {
+// 0: Excludes from priority system
+// 1-9: priority
+const priority: { [key in CreepRoleName]: number } = {
   idler: 9,
   builder: 3,
   harvester: 9,
   repairer: 2,
+  staticharvester: 0,
   transferer: 1,
-  upgrader: 4,
+  upgrader: 8,
 }
 
 const ConfigOfLevel: {
   [key: number]: {
     creeps: number,
-    priority: { [key: string]: number }
+    priority: { [key in CreepRoleName]: number }
   }
 } = {
   0: { creeps: 0, priority },

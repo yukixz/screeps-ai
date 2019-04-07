@@ -1,7 +1,9 @@
+import { CreepJob } from 'utils/creep'
+
 const Transferer: CreepRole = {
   name: 'transferer',
 
-  jobs: (room: Room, terrian: RoomTerrain): Structure[] => {
+  jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return room.find(FIND_STRUCTURES, {
       filter: (structure) =>
         (
@@ -10,6 +12,7 @@ const Transferer: CreepRole = {
         ) &&
         structure.energy < structure.energyCapacity
     })
+      .map(s => new CreepJob(s))
   },
 
   next: (creep: Creep): CreepRoleName[] | void => {
@@ -21,7 +24,8 @@ const Transferer: CreepRole = {
     }
   },
 
-  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+  work: (creep: Creep, job: ICreepJob): ScreepsReturnCode | void => {
+    const { target } = job
     let retcode: ScreepsReturnCode | undefined
     if (target instanceof Structure) {
       retcode = creep.transfer(target, RESOURCE_ENERGY)

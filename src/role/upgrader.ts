@@ -1,8 +1,10 @@
+import { CreepJob } from 'utils/creep'
+
 const Upgrader: CreepRole = {
   name: 'upgrader',
 
-  jobs: (room: Room, terrian: RoomTerrain): StructureController[] => {
-    return room.controller ? Array(4).fill(room.controller) : []
+  jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
+    return room.controller ? Array(8).fill(new CreepJob(room.controller)) : []
   },
 
   next: (creep: Creep): CreepRoleName[] | void => {
@@ -14,7 +16,8 @@ const Upgrader: CreepRole = {
     }
   },
 
-  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+  work: (creep: Creep, job: ICreepJob): ScreepsReturnCode | void => {
+    const { target } = job
     let retcode: ScreepsReturnCode | undefined
     if (target instanceof StructureController) {
       retcode = creep.upgradeController(target)

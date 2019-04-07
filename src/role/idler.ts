@@ -1,7 +1,7 @@
 const Idler: CreepRole = {
   name: 'idler',
 
-  jobs: (room: Room, terrian: RoomTerrain): ConstructionSite[] => {
+  jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return []
   },
 
@@ -9,7 +9,7 @@ const Idler: CreepRole = {
     return ['harvester']
   },
 
-  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+  work: (creep: Creep, target: ICreepJob): ScreepsReturnCode | void => {
     return OK
   },
 }

@@ -1,8 +1,11 @@
+import { CreepJob } from 'utils/creep'
+
 const Builder: CreepRole = {
   name: 'builder',
 
-  jobs: (room: Room, terrian: RoomTerrain): CreepTargetObject[] => {
+  jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return room.find(FIND_CONSTRUCTION_SITES)
+      .map(s => new CreepJob(s))
   },
 
   next: (creep: Creep): CreepRoleName[] | void => {
@@ -14,7 +17,8 @@ const Builder: CreepRole = {
     }
   },
 
-  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+  work: (creep: Creep, job: ICreepJob): ScreepsReturnCode | void => {
+    const { target } = job
     let retcode: ScreepsReturnCode | undefined
     if (target instanceof ConstructionSite) {
       retcode = creep.build(target)

@@ -1,32 +1,22 @@
+import { CreepJob } from 'utils/creep'
+import { lookAtSourceJobs } from "utils/source";
+
 const Harvester: CreepRole = {
   name: 'harvester',
 
-  jobs: (room: Room, terrian: RoomTerrain): CreepTargetObject[] => {
-    const resutls: CreepTargetObject[] = []
-    const sources = room.find(FIND_SOURCES)
-    for (const source of sources) {
-      const { x, y } = source.pos
-      for (const [dx, dy] of [
-        [-1, -1],
-        [-1, -0],
-        [-1, +1],
-        [-0, -1],
-        [-0, +1],
-        [+1, -1],
-        [+1, -0],
-        [+1, +1],
-      ]) {
-        if (terrian.get(x + dx, y + dy) === 0)
-          resutls.push(source)
-      }
-    }
-    const containers = room.find(FIND_STRUCTURES, {
-      filter: s =>
-        s.structureType === STRUCTURE_CONTAINER &&
-        s.store[RESOURCE_ENERGY] >= 100,
-    })
-    resutls.push(...containers)
-    return resutls
+  jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
+    return [
+      ...room.find(FIND_STRUCTURES, {
+        filter: s =>
+          s.structureType === STRUCTURE_CONTAINER &&
+          s.store[RESOURCE_ENERGY] >= 100,
+      })
+        .map(s => new CreepJob(s)),
+
+      ...lookAtSourceJobs(room)
+        .filter(([j, m]) => m.standable && !m.static_on)
+        .map(([j, m]) => j),
+    ]
   },
 
   next: (creep: Creep): CreepRoleName[] | void => {
@@ -35,7 +25,8 @@ const Harvester: CreepRole = {
     }
   },
 
-  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+  work: (creep: Creep, job: ICreepJob): ScreepsReturnCode | void => {
+    const { target } = job
     let retcode: ScreepsReturnCode | undefined
     if (target instanceof Source) {
       retcode = creep.harvest(target)

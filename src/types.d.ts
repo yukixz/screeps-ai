@@ -1,7 +1,11 @@
 interface CreepMemory {
   type: string
   role: CreepRoleName
-  target?: string
+  job?: {
+    id: string
+    target: string
+    position: [number, number]
+  }
   retcode?: ScreepsReturnCode | void
 }
 
@@ -14,18 +18,25 @@ type CreepTypeName =
 
 interface CreepRole {
   name: CreepRoleName
-  jobs: (room: Room, terrian: RoomTerrain) => CreepTargetObject[]
+  jobs: (room: Room, terrian: RoomTerrain) => ICreepJob[]
   next: (creep: Creep) => CreepRoleName[] | void
-  work: (creep: Creep, target: CreepTargetObject) => ScreepsReturnCode | void
+  work: (creep: Creep, job: ICreepJob) => ScreepsReturnCode | void
 }
 type CreepRoleName =
   | 'idler'
   | 'builder'
   | 'harvester'
   | 'repairer'
+  | 'staticharvester'
   | 'transferer'
   | 'upgrader'
-type CreepTargetObject =
+
+interface ICreepJob {
+  id: string
+  target: CreepJobTarget
+  position: [number, number]
+}
+type CreepJobTarget =
   | ConstructionSite
   | Resource
   | Source

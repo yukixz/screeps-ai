@@ -1,10 +1,13 @@
+import { CreepJob } from 'utils/creep'
+
 const Repairer: CreepRole = {
   name: 'repairer',
 
-  jobs: (room: Room, terrian: RoomTerrain): CreepTargetObject[] => {
-    return [
-      ...room.find(FIND_STRUCTURES, { filter: obj => obj.hits < obj.hitsMax * 0.80 }),
-    ]
+  jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
+    return room.find(FIND_STRUCTURES, {
+      filter: obj => obj.hits < obj.hitsMax * 0.80
+    })
+      .map(s => new CreepJob(s))
   },
 
   next: (creep: Creep): CreepRoleName[] | void => {
@@ -16,7 +19,8 @@ const Repairer: CreepRole = {
     }
   },
 
-  work: (creep: Creep, target: CreepTargetObject): ScreepsReturnCode | void => {
+  work: (creep: Creep, job: ICreepJob): ScreepsReturnCode | void => {
+    const { target } = job
     let retcode: ScreepsReturnCode | undefined
     if (target instanceof Structure) {
       retcode = creep.repair(target)
