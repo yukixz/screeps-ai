@@ -2,6 +2,7 @@ import { CreepJob } from 'utils/creep'
 
 const Upgrader: CreepRole = {
   name: 'upgrader',
+  allowed_types: ['general'],
 
   jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return room.controller ? Array(8).fill(new CreepJob(room.controller)) : []

@@ -37,7 +37,6 @@ export function lookAtSourceJobs(room: Room): [CreepJob, SourceJobMark][] {
     }
   }
 
-  console.log(JSON.stringify(results, null, '\t'))
   cache = results
   cache_tick = Game.time
   return results

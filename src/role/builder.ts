@@ -2,6 +2,7 @@ import { CreepJob } from 'utils/creep'
 
 const Builder: CreepRole = {
   name: 'builder',
+  allowed_types: ['general'],
 
   jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return room.find(FIND_CONSTRUCTION_SITES)

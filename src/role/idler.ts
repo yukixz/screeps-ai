@@ -1,5 +1,6 @@
 const Idler: CreepRole = {
   name: 'idler',
+  allowed_types: ['general'],
 
   jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return []

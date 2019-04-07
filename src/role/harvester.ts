@@ -3,6 +3,7 @@ import { lookAtSourceJobs } from "utils/source";
 
 const Harvester: CreepRole = {
   name: 'harvester',
+  allowed_types: ['general'],
 
   jobs: (room: Room, terrian: RoomTerrain): ICreepJob[] => {
     return [

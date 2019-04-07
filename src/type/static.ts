@@ -1,12 +1,11 @@
-const GeneralType: CreepType = {
-  name: 'general',
+const StaticType: CreepType = {
+  name: 'static',
 
   body: (cost: number): BodyPartConstant[] => {
-    let avail: BodyPartConstant[] = [MOVE, WORK, CARRY]
-    let body: BodyPartConstant[] = []
+    let body: BodyPartConstant[] = [MOVE]
     let body_cost: number = 0
     for (let i = 0; i < 100; i++) {
-      const p = avail[i % 3]
+      const p = WORK
       if (body_cost + BODYPART_COST[p] <= cost) {
         body.push(p)
         body_cost += BODYPART_COST[p]
@@ -17,4 +16,4 @@ const GeneralType: CreepType = {
   },
 }
 
-export default GeneralType
+export default StaticType

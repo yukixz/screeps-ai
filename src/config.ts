@@ -1,30 +1,36 @@
-// 0: Excludes from priority system
-// 1-9: priority
-const priority: { [key in CreepRoleName]: number } = {
-  idler: 9,
+// 0: Excludes from role priority
+const role_priority: Record<CreepRoleName, number> = {
   builder: 3,
   harvester: 9,
+  idler: 9,
   repairer: 2,
   staticharvester: 0,
   transferer: 1,
   upgrader: 8,
 }
 
+// 0: Excludes from type priority
+const type_priority: Record<CreepTypeName, number> = {
+  general: 1,
+  static: 2,
+}
+
 const ConfigOfLevel: {
   [key: number]: {
-    creeps: number,
-    priority: { [key in CreepRoleName]: number }
+    creeps: Record<CreepTypeName, number>
+    role_priority: Record<CreepRoleName, number>
+    type_priority: Record<CreepTypeName, number>
   }
 } = {
-  0: { creeps: 0, priority },
-  1: { creeps: 4, priority },
-  2: { creeps: 8, priority },
-  3: { creeps: 8, priority },
-  4: { creeps: 8, priority },
-  5: { creeps: 8, priority },
-  6: { creeps: 8, priority },
-  7: { creeps: 8, priority },
-  8: { creeps: 8, priority },
+  0: { creeps: { general: 0, static: 0 }, role_priority, type_priority },
+  1: { creeps: { general: 4, static: 0 }, role_priority, type_priority },
+  2: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
+  3: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
+  4: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
+  5: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
+  6: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
+  7: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
+  8: { creeps: { general: 8, static: 4 }, role_priority, type_priority },
 }
 
 export default ConfigOfLevel

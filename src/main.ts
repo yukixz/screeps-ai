@@ -3,6 +3,7 @@ import { ErrorMapper } from 'utils/ErrorMapper'
 
 import { CreepJob } from 'utils/creep'
 import GeneralType from 'type/general'
+import StaticType from 'type/static'
 import Idler from 'role/idler'
 import Builder from 'role/builder'
 import Harvester from 'role/harvester'
@@ -12,7 +13,7 @@ import Upgrader from 'role/upgrader'
 import ConfigOfLevel from 'config'
 import StaticHarvester from 'role/staticharvester';
 
-const CreepRoles: { [key in CreepRoleName]: CreepRole } = {
+const CreepRoles: Record<CreepRoleName, CreepRole> = {
   idler: Idler,
   builder: Builder,
   harvester: Harvester,
@@ -21,6 +22,13 @@ const CreepRoles: { [key in CreepRoleName]: CreepRole } = {
   transferer: Transferer,
   upgrader: Upgrader,
 }
+const CreepTypes: Record<CreepTypeName, CreepType> = {
+  general: GeneralType,
+  static: StaticType,
+}
+
+// Notify when main.js reload
+console.log(`******** Reload ********`)
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
@@ -42,17 +50,17 @@ export const loop = ErrorMapper.wrapLoop(() => {
   const room_level: number = _.get(room, ['controller', 'level'], 0)
   const config = ConfigOfLevel[room_level]
 
-  // Search room for available jobs
-  const jobs_by_role: { [key: string]: CreepJob[] } = {}
-  for (const [role_name, role] of Object.entries(CreepRoles)) {
-    jobs_by_role[role_name] = role.jobs(room, terrian)
-  }
-  // console.log('Jobs', Object.entries(jobs_by_role).map(([n, j]) => `${n}:${j.length}`))
-
-  // Scan all creeps' roles
-  const creeps_by_role: { [key: string]: Creep[] } = {}
+  // Scan all creeps
+  const creeps_by_type: { [key: string]: Creep[] } = _.mapValues(CreepTypes, v => [])
+  const creeps_by_role: { [key: string]: Creep[] } = _.mapValues(CreepRoles, v => [])
   const creeps_avail: [CreepRoleName[], Creep][] = []
   for (const creep of creeps) {
+    // Type
+    const type = CreepTypes[creep.memory.type]
+    if (creeps_by_type[type.name] == null)
+      creeps_by_type[type.name] = []
+    creeps_by_type[type.name].push(creep)
+    // Role
     const role = CreepRoles[creep.memory.role]
     const new_roles = role.next(creep)
     if (new_roles) {
@@ -66,6 +74,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   // Scan jobs without creep working
+  const jobs_by_role: { [key: string]: CreepJob[] } = _.mapValues(CreepRoles, v => [])
+  for (const [role_name, role] of Object.entries(CreepRoles)) {
+    jobs_by_role[role_name] = role.jobs(room, terrian)
+  }
   const jobs_avail: [CreepRoleName, CreepJob][] = []
   for (const [role_name, role_jobs] of Object.entries(jobs_by_role)) {
     const role_creeps = (creeps_by_role[role_name] || []).slice()
@@ -81,14 +93,15 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   // Assign creeps' roles
   creeps_avail.sort(([ra, a], [rb, b]) => a.body.length - b.body.length)
-  jobs_avail.sort(([a, ja], [b, jb]) => config.priority[a] - config.priority[b])
+  jobs_avail.sort(([a, ja], [b, jb]) => config.role_priority[a] - config.role_priority[b])
   for (const [role_name, job] of jobs_avail) {
+    const allowed_types = CreepRoles[role_name].allowed_types
     const idx = creeps_avail.findIndex(([new_roles, creep]) =>
-      (new_roles.includes(role_name as CreepRoleName)))
+      new_roles.includes(role_name) && allowed_types.includes(creep.memory.type))
     if (idx >= 0) {
       const [new_roles, creep] = creeps_avail.splice(idx, 1)[0]
       console.log(`Assign creep:${creep.name} role:${creep.memory.role} to role:${role_name} target:${job.id}`)
-      creep.memory.role = role_name as CreepRoleName
+      creep.memory.role = role_name
       creep.memory.job = {
         id: job.id,
         target: job.target.id,
@@ -103,25 +116,30 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  // Spawn new `idler/general` creeps to meet creep amount
-  if (config.creeps > creeps.length) {
-    for (const [spawn, role_name] of _.zip(
-      spwans.filter(spawn => spawn.spawning == null),
-      Array(config.creeps - creeps.length).fill('idler'),
-    )) {
-      if (spawn == null || role_name == null)
-        break
-      const type = GeneralType
-      const name = Date.now().toString(16)
-      const cost = room.energyCapacityAvailable
-      if (spawn.spawnCreep(type.body(cost), name, {
-        memory: {
-          type: type.name,
-          role: role_name,
-        }
-      }) === OK) {
-        console.log(`Spawn new creep:${name} with spawn:${spawn.name} cost:${cost} type:${type.name} role:${role_name}`)
+  // Spawn new creeps to meet creep amount
+  const idles_spawns = spwans.filter(spawn => spawn.spawning == null)
+  const types_needs: CreepType[] = []
+  for (const [type_name, type_creeps] of Object.entries(creeps_by_type)) {
+    const type = CreepTypes[type_name as CreepTypeName]
+    const type_amount = type_creeps.length
+    const type_required = config.creeps[type_name as CreepTypeName]
+    if (type_amount < type_required) {
+      types_needs.push(...Array(type_required - type_amount).fill(type))
+    }
+  }
+  types_needs.sort((a, b) => config.type_priority[a.name] - config.type_priority[b.name])
+  for (const [spawn, type] of _.zip<any>(idles_spawns, types_needs)) {
+    if (spawn == null || type == null)
+      break
+    const name = type.name + '-' + Date.now().toString(16)
+    const cost = room.energyCapacityAvailable
+    if (spawn.spawnCreep(type.body(cost), name, {
+      memory: {
+        type: type.name,
+        role: 'idler',
       }
+    }) === OK) {
+      console.log(`Spawn new creep:${name} with spawn:${spawn.name} cost:${cost} type:${type.name} role:idler`)
     }
   }
 

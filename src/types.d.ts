@@ -1,5 +1,5 @@
 interface CreepMemory {
-  type: string
+  type: CreepTypeName
   role: CreepRoleName
   job?: {
     id: string
@@ -10,14 +10,16 @@ interface CreepMemory {
 }
 
 interface CreepType {
-  name: string
+  name: CreepTypeName
   body: (cost: number) => BodyPartConstant[]
 }
 type CreepTypeName =
   | 'general'
+  | 'static'
 
 interface CreepRole {
   name: CreepRoleName
+  allowed_types: CreepTypeName[]
   jobs: (room: Room, terrian: RoomTerrain) => ICreepJob[]
   next: (creep: Creep) => CreepRoleName[] | void
   work: (creep: Creep, job: ICreepJob) => ScreepsReturnCode | void
